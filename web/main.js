@@ -30,6 +30,16 @@ new Vue({
             this.context.strokeStyle = "#FFFFFF";
             this.context.lineWidth = 16;
             this.context.lineCap = "round";
+
+            // Add event listeners for drawing
+            canvas.addEventListener('mousedown', this.startDrawing);
+            canvas.addEventListener('mousemove', this.draw);
+            canvas.addEventListener('mouseup', this.stopDrawing);
+
+            // Add touch event listeners for mobile support
+            canvas.addEventListener('touchstart', this.handleTouchStart, false);
+            canvas.addEventListener('touchmove', this.handleTouchMove, false);
+            canvas.addEventListener('touchend', this.stopDrawing, false);
         },
         startDrawing(event) {
             this.isDrawing = true;
