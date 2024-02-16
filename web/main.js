@@ -8,20 +8,18 @@ new Vue({
         classification: '',
         modelLoaded: false,
         confidence: null,
+        selectedModel: 'mnist',
     },
     mounted() {
         this.initCanvas();
-        this.loadModel();
-        const canvas = document.getElementById('canvas');
-    
-        // Use arrow functions to ensure 'this' context is preserved
-        canvas.addEventListener('touchstart', (event) => this.handleTouchStart(event), {passive: false});
-        canvas.addEventListener('touchmove', (event) => this.handleTouchMove(event), {passive: false});
-        canvas.addEventListener('touchend', () => this.stopDrawing());
+        this.loadModel(); // Load the default model on mount
     },
     methods: {
         async loadModel() {
-            this.model = await tf.loadGraphModel('./models/mnist_cnn_tfjs/model.json');
+            this.modelLoaded = false;
+            let modelPath = './models/';
+            modelPath += this.selectedModel === 'emnist' ? 'emnist_cnn_tfjs/model.json' : 'mnist_cnn_tfjs/model.json';
+            this.model = await tf.loadGraphModel(modelPath);
             this.modelLoaded = true;
         },
         initCanvas() {
@@ -116,6 +114,22 @@ new Vue({
             downloadLink.download = 'digit.png';
             downloadLink.click();
         },
+        convertClassToChar(classIndex) {
+            const digits = '0123456789';
+            const lowerCaseLetters = 'abcdefghijklmnopqrstuvwxyz';
+            const upperCaseLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        
+            if (classIndex < 10) {
+                // First 10 indices are digits
+                return digits[classIndex];
+            } else if (classIndex < 36) {
+                // Next 26 indices are lowercase letters
+                return upperCaseLetters[classIndex - 10];
+            } else {
+                // Remaining indices are uppercase letters
+                return lowerCaseLetters[classIndex - 36];
+            }
+        },
         async classifyDigit() {
             // Simplified without altering the logic
             const tensor = tf.browser.fromPixels(this.context.getImageData(0, 0, 280, 280), 1)
@@ -129,11 +143,15 @@ new Vue({
             const confidenceScores = await scores.data();
         
             predictedClass.data().then((prediction) => {
-                this.classification = prediction[0];
-                const confidence = confidenceScores[prediction[0]];
+                const classIndex = prediction[0];
+                // Convert class index to character
+                const char = this.convertClassToChar(classIndex);
+                this.classification = char;
+        
+                const confidence = confidenceScores[classIndex];
                 this.confidence = (confidence * 100).toFixed(2);
-                console.log(`Predicted class: ${prediction[0]}, Confidence: ${this.confidence}%`);
+                console.log(`Predicted class: ${char}, Confidence: ${this.confidence}%`);
             });
-        },       
+        },    
     },
 });
