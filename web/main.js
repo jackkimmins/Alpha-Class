@@ -5,9 +5,9 @@ new Vue({
         isDrawing: false,
         context: null,
         model: null,
-        classification: '',
+        classification: '...',
         modelLoaded: false,
-        confidence: null,
+        confidence: '...',
         selectedModel: 'mnist',
     },
     mounted() {
@@ -108,8 +108,8 @@ new Vue({
             this.isDrawing = false;
             this.lastX = null;
             this.lastY = null;
-            this.classification = ''; // Optionally clear the previous classification
-            this.confidence = null; // Optionally clear the previous confidence
+            this.classification = '...';
+            this.confidence = '...';
         },
         downloadDigit() {
             // Simplified without changing functionality
