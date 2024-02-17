@@ -1,4 +1,3 @@
-// Vue component
 new Vue({
     el: '#app',
     data: {
@@ -12,7 +11,8 @@ new Vue({
     },
     mounted() {
         this.initCanvas();
-        this.loadModel(); // Load the default model on mount
+        this.loadModel();
+        window.addEventListener('keyup', this.handleKeyUp);
     },
     methods: {
         async loadModel() {
@@ -31,12 +31,12 @@ new Vue({
             this.context.lineWidth = 16;
             this.context.lineCap = "round";
 
-            // Add event listeners for drawing
+            // Listeners for drawing
             canvas.addEventListener('mousedown', this.startDrawing);
             canvas.addEventListener('mousemove', this.draw);
             canvas.addEventListener('mouseup', this.stopDrawing);
 
-            // Add touch event listeners for mobile support
+            // Touch listeners for mobile support
             canvas.addEventListener('touchstart', this.handleTouchStart, false);
             canvas.addEventListener('touchmove', this.handleTouchMove, false);
             canvas.addEventListener('touchend', this.stopDrawing, false);
@@ -49,7 +49,7 @@ new Vue({
         draw(event) {
             if (!this.isDrawing) return;
 
-            // Smooth drawing by adding intermediate points
+            // Smooth drawing with intermediate points
             const currentX = event.offsetX;
             const currentY = event.offsetY;
             const lastX = this.lastX || currentX;
@@ -58,10 +58,10 @@ new Vue({
             // Interpolate points for a smoother line
             const distance = Math.sqrt(Math.pow(currentX - lastX, 2) + Math.pow(currentY - lastY, 2));
             const angle = Math.atan2(currentY - lastY, currentX - lastX);
-            const steps = distance / 2; // Adjust step size for smoothness
+            const steps = distance / 2;
             for (let i = 0; i < steps; i++) {
-                const x = lastX + Math.cos(angle) * i * 2; // Step size
-                const y = lastY + Math.sin(angle) * i * 2; // Step size
+                const x = lastX + Math.cos(angle) * i * 2;
+                const y = lastY + Math.sin(angle) * i * 2;
                 this.context.lineTo(x, y);
                 this.context.stroke();
             }
@@ -72,7 +72,6 @@ new Vue({
             this.lastX = currentX;
             this.lastY = currentY;
         },
-        // Reset lastX and lastY on stopDrawing
         stopDrawing() {
             if (this.isDrawing) {
                 this.isDrawing = false;
@@ -81,7 +80,7 @@ new Vue({
             }
         },
         handleTouchStart(event) {
-            event.preventDefault(); // Prevent scrolling when touching the canvas
+            event.preventDefault();
             let touch = event.touches[0];
             let mouseEvent = new MouseEvent("mousedown", {
                 clientX: touch.clientX,
@@ -91,7 +90,7 @@ new Vue({
         },
         
         handleTouchMove(event) {
-            event.preventDefault(); // Prevent scrolling when moving over the canvas
+            event.preventDefault();
             let touch = event.touches[0];
             let mouseEvent = new MouseEvent("mousemove", {
                 clientX: touch.clientX,
@@ -100,11 +99,9 @@ new Vue({
             document.getElementById('canvas').dispatchEvent(mouseEvent);
         },        
         resetCanvas() {
-            // Clear the canvas
-            this.context.fillStyle = "#000000"; // Set to the background color of your choice
+            this.context.fillStyle = "#000000";
             this.context.fillRect(0, 0, this.context.canvas.width, this.context.canvas.height);
 
-            // Reset any other drawing state as needed
             this.isDrawing = false;
             this.lastX = null;
             this.lastY = null;
@@ -112,7 +109,6 @@ new Vue({
             this.confidence = '...';
         },
         downloadDigit() {
-            // Simplified without changing functionality
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = 28;
             tempCanvas.height = 28;
@@ -130,18 +126,17 @@ new Vue({
             const upperCaseLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         
             if (classIndex < 10) {
-                // First 10 indices are digits
                 return digits[classIndex];
             } else if (classIndex < 36) {
-                // Next 26 indices are lowercase letters
                 return upperCaseLetters[classIndex - 10];
             } else {
-                // Remaining indices are uppercase letters
                 return lowerCaseLetters[classIndex - 36];
             }
         },
+        handleKeyUp(event) {
+            if (event.key === 'Enter') this.classifyDigit();
+        },
         async classifyDigit() {
-            // Simplified without altering the logic
             const tensor = tf.browser.fromPixels(this.context.getImageData(0, 0, 280, 280), 1)
                 .resizeBilinear([28, 28])
                 .toFloat()
@@ -154,6 +149,7 @@ new Vue({
         
             predictedClass.data().then((prediction) => {
                 const classIndex = prediction[0];
+
                 // Convert class index to character
                 const char = this.convertClassToChar(classIndex);
                 this.classification = char;
@@ -163,5 +159,8 @@ new Vue({
                 console.log(`Predicted class: ${char}, Confidence: ${this.confidence}%`);
             });
         },    
+        beforeDestroy() {
+            window.removeEventListener('keyup', this.handleKeyUp);
+        }
     },
 });
